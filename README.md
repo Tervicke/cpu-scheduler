@@ -5,7 +5,7 @@
 
 ### Basic
 - [x] **FCFS** — First Come, First Served *(Non-preemptive)*
-- [ ] **SJF** — Shortest Job First *(Non-preemptive)*
+- [x] **SJF** — Shortest Job First *(Non-preemptive)*
 - [ ] **SRTF** — Shortest Remaining Time First *(Preemptive SJF)*
 - [ ] **Round Robin (RR)** — Preemptive, with time quantum
 
