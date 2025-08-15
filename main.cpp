@@ -10,10 +10,18 @@ public:
     int completionTime{};
     int turnaroundTime{};
     int waitingTime{};
+    int starttime{};
     Process(const int arrivalTime , const int burstTime)
     {
         this->arrivalTime = arrivalTime;
         this->burstTime = burstTime;
+    }
+
+    Process();
+
+    void print() const
+    {
+        std::cout <<"p"<< id << " " << arrivalTime << " " << burstTime << " " << completionTime <<  " " << turnaroundTime << " " << waitingTime << " \n";
     }
 };
 class ProcessContainer
@@ -28,6 +36,58 @@ public:
     }
 };
 
+void run_sjf(const ProcessContainer& container)
+{
+
+    auto sorted = container.processes;
+    //sorted sorts the proccess in the ordero of their arrival time
+    std::ranges::sort(sorted, [](const auto& a , const auto& b)
+    {
+        //if the arrival times are equal , proccess it according to the pid
+        if (a.arrivalTime == b.arrivalTime)
+        {
+            return a.id < b.id;
+        }
+        return a.arrivalTime < b.arrivalTime;
+    });
+
+    //lambda function to set priority in the ReadyQueue
+    auto cmp = [](const Process& p1, const Process& p2) -> bool
+    {
+        if (p1.burstTime == p2.burstTime)
+        {
+            return p1.arrivalTime > p2.arrivalTime;
+        }
+        return p1.burstTime > p2.burstTime;
+    };
+    int last_process = 0; //this points the last proccess in the sorted queue
+    int currentTime = 0;
+    std::priority_queue<Process, std::vector<Process>, decltype(cmp)> ReadyQueue(cmp);
+    while (last_process < sorted.size() || !ReadyQueue.empty())
+    {
+        while (last_process < sorted.size() && sorted[last_process].arrivalTime <= currentTime)
+        {
+            ReadyQueue.push(sorted[last_process]);
+            last_process++;
+        }
+
+        // move to the next arrival time in the list
+        if (ReadyQueue.empty())
+        {
+            currentTime = sorted[last_process].arrivalTime;
+            continue;
+        }
+
+        auto p = ReadyQueue.top();
+        ReadyQueue.pop();
+
+        p.completionTime = currentTime + p.burstTime;
+        p.turnaroundTime = p.completionTime - p.arrivalTime;
+        p.waitingTime = currentTime - p.arrivalTime;
+        currentTime += p.burstTime;
+        p.print();
+    }
+}
 
 void run_fcfs(const ProcessContainer& container)
 {
@@ -58,7 +118,7 @@ void run_fcfs(const ProcessContainer& container)
     }
     for (auto x : sorted)
     {
-        std::cout <<"p"<< x.id << " " << x.arrivalTime << " " << x.burstTime << " " << x.completionTime <<  " " << x.turnaroundTime << " " << x.waitingTime << " \n";
+        x.print();
     }
 };
 
@@ -68,6 +128,6 @@ int main()
     c.addProcess( Process(0 , 5) );
     c.addProcess( Process(1 , 3) );
     c.addProcess( Process(2 , 8) );
-    run_fcfs(c);
+    run_sjf(c);
     return 0;
 }
