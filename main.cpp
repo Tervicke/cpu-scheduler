@@ -1,6 +1,8 @@
 #include <iostream>
+#include <queue>
 #include<vector>
 #include<bits/stdc++.h>
+#include<queue>
 class Process
 {
 public:
@@ -35,7 +37,55 @@ public:
         processes.push_back(newProcess);
     }
 };
-
+void run_rr(const ProcessContainer& container , const int timeQuantum) //Round Robin
+{
+    auto sorted = container.processes;
+    std::ranges::sort(sorted, [](const auto& a , const auto& b)
+    {
+        //if the arrival times are equal , proccess it according to the pid
+        if (a.arrivalTime == b.arrivalTime)
+        {
+            return a.id < b.id;
+        }
+        return a.arrivalTime < b.arrivalTime;
+    });
+    std::deque<Process> ReadyQueue;
+    int lastprocess = 0;
+    int currentTime = 0;
+    int processDone = 0;
+    std::map<int,int> originalBurstTime;
+    while (processDone < sorted.size())
+    {
+        while (lastprocess < sorted.size() && sorted[lastprocess].arrivalTime <= currentTime)
+        {
+            ReadyQueue.push_back(sorted[lastprocess]);
+            originalBurstTime[sorted[lastprocess].id] = sorted[lastprocess].burstTime;
+            lastprocess++;
+        }
+        if (!ReadyQueue.empty())
+        {
+            auto& currentProcess = ReadyQueue.front();
+            ReadyQueue.pop_front();
+            if (currentProcess.burstTime > timeQuantum)
+            {
+                currentProcess.burstTime -= timeQuantum;
+                ReadyQueue.push_back(currentProcess);
+                currentTime += timeQuantum;
+            }else
+            {
+                currentProcess.completionTime = currentTime + currentProcess.burstTime;
+                currentProcess.turnaroundTime = currentProcess.completionTime - currentProcess.arrivalTime;
+                currentProcess.waitingTime = currentProcess.turnaroundTime - originalBurstTime[currentProcess.id];
+                currentTime += currentProcess.burstTime;
+                currentProcess.print();
+                processDone += 1;
+            }
+        }else
+        {
+            currentTime = sorted[lastprocess].arrivalTime;
+        }
+    }
+}
 void run_sjf(const ProcessContainer& container)
 {
 
@@ -125,9 +175,9 @@ void run_fcfs(const ProcessContainer& container)
 int main()
 {
     ProcessContainer c;
-    c.addProcess( Process(0 , 5) );
-    c.addProcess( Process(1 , 3) );
-    c.addProcess( Process(2 , 8) );
-    run_sjf(c);
+    c.addProcess( Process(0 , 6) );  // P1: AT=0, BT=6
+    c.addProcess( Process(1 , 4) );  // P2: AT=1, BT=4
+    c.addProcess( Process(3 , 5) );  // P3: AT=3, BT=5
+    run_rr(c , 3);
     return 0;
 }
