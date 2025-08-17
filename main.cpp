@@ -37,6 +37,81 @@ public:
         processes.push_back(newProcess);
     }
 };
+
+void run_srjf(const ProcessContainer& container)
+{
+    auto sorted = container.processes;
+    std::ranges::sort(sorted, [](const auto& a , const auto& b)
+    {
+        //if the arrival times are equal , proccess it according to the pid
+        if (a.arrivalTime == b.arrivalTime)
+        {
+            return a.id < b.id;
+        }
+        return a.arrivalTime < b.arrivalTime;
+    });
+
+    //lambda function to set priority in the ReadyQueue
+    auto cmp = [](const Process& p1, const Process& p2) -> bool
+    {
+        if (p1.burstTime == p2.burstTime)
+        {
+            return p1.arrivalTime > p2.arrivalTime;
+        }
+        return p1.burstTime > p2.burstTime;
+    };
+    int lastProcess = 0; //this points the last proccess in the sorted queue
+    std::priority_queue<Process, std::vector<Process>, decltype(cmp)> ReadyQueue(cmp);
+
+    int processesDone = 0;
+    int currentTime = 0;
+    bool processRunning = false;
+    Process dummy(-1,-1);
+    Process& currentProcess = dummy;
+    std::map<int,int> originalBurstTime;
+    while (processesDone < sorted.size())
+    {
+        while (lastProcess < sorted.size() && sorted[lastProcess].arrivalTime <= currentTime)
+        {
+            ReadyQueue.push(sorted[lastProcess]);
+            originalBurstTime[sorted[lastProcess].id] = sorted[lastProcess].burstTime;
+            lastProcess++;
+        }
+        if (!processRunning) //process not running
+        {
+            if (!ReadyQueue.empty())
+            {
+                currentProcess = ReadyQueue.top();
+                ReadyQueue.pop();
+                processRunning = true;
+            }
+        }else //process running
+        {
+            if (ReadyQueue.top().burstTime < currentProcess.burstTime) //context switch only if the burst time is strictly less than the current remaining burst time
+            {
+               ReadyQueue.push(currentProcess);
+                currentProcess = ReadyQueue.top();
+                ReadyQueue.pop();
+            }
+        }
+        currentTime++;
+        if (processRunning)
+        {
+            currentProcess.burstTime--;
+            if (currentProcess.burstTime == 0) //process is abo
+            {
+                currentProcess.completionTime = currentTime;
+                currentProcess.turnaroundTime = currentTime - currentProcess.arrivalTime;
+                currentProcess.waitingTime = currentProcess.turnaroundTime - originalBurstTime[currentProcess.id];
+                processesDone++;
+                currentProcess.print();
+                currentProcess = dummy;
+                processRunning = false;
+            }
+        }
+    }
+}
+
 void run_rr(const ProcessContainer& container , const int timeQuantum) //Round Robin
 {
     auto sorted = container.processes;
@@ -175,9 +250,10 @@ void run_fcfs(const ProcessContainer& container)
 int main()
 {
     ProcessContainer c;
-    c.addProcess( Process(0 , 6) );  // P1: AT=0, BT=6
-    c.addProcess( Process(1 , 4) );  // P2: AT=1, BT=4
-    c.addProcess( Process(3 , 5) );  // P3: AT=3, BT=5
-    run_rr(c , 3);
+    c.addProcess(Process(0,8));;
+    c.addProcess(Process(1,4));;
+    c.addProcess(Process(2,9));;
+    c.addProcess(Process(3,5));;
+    run_srjf(c);
     return 0;
 }
