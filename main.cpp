@@ -3,6 +3,7 @@
 #include<vector>
 #include<bits/stdc++.h>
 #include<queue>
+#include <json.hpp>
 class Process
 {
 public:
@@ -214,8 +215,9 @@ void run_sjf(const ProcessContainer& container)
     }
 }
 
-void run_fcfs(const ProcessContainer& container)
+void run_fcfs(const ProcessContainer& container , nlohmann::json& j)
 {
+    j["algorithm"] = "First Come First Serve";
     std::vector<Process> sorted = container.processes;
     int currentTime = 0;
     //custom sorting function sorts according to the arrival time first come first serve
@@ -240,7 +242,23 @@ void run_fcfs(const ProcessContainer& container)
         p.turnaroundTime = p.completionTime - p.arrivalTime;
         p.waitingTime = p.turnaroundTime - p.burstTime;
         //update the current time
+        j["plot"].push_back({
+            {"id" , p.id},
+            {"start" , p.arrivalTime},
+            {"end" , p.completionTime}
+        });
+        j["processes"].push_back({
+                {"id" , p.id},
+                {"AT" , p.arrivalTime},
+                {"CT" , p.completionTime},
+                {"BT" , p.burstTime},
+                {"TAT",p.turnaroundTime},
+                   {"WT" , p.waitingTime},
+            });
     }
+    std::ofstream out("gantt.json");
+    out << j.dump(4);
+    std::cout << "works till here";
     for (auto x : sorted)
     {
         x.print();
@@ -250,10 +268,10 @@ void run_fcfs(const ProcessContainer& container)
 int main()
 {
     ProcessContainer c;
-    c.addProcess(Process(0,8));;
+    c.addProcess(Process(0,9));;
     c.addProcess(Process(1,4));;
     c.addProcess(Process(2,9));;
-    c.addProcess(Process(3,5));;
-    run_srjf(c);
+    nlohmann::json j;
+    run_fcfs(c , j);
     return 0;
 }
