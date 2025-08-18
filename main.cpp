@@ -1,9 +1,9 @@
-#include <iostream>
-#include <queue>
+#include <iostream> #include <queue>
 #include<vector>
 #include<bits/stdc++.h>
 #include<queue>
 #include <json.hpp>
+
 class Process
 {
 public:
@@ -271,7 +271,9 @@ int main()
     c.addProcess(Process(0,9));;
     c.addProcess(Process(1,4));;
     c.addProcess(Process(2,9));;
+    c.addProcess(Process(2,5));;
     nlohmann::json j;
     run_fcfs(c , j);
+    system("bash -c 'source ../venv/bin/activate && python3 ../script.py'");
     return 0;
 }

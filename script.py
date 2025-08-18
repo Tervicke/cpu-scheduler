@@ -4,7 +4,7 @@ from matplotlib.colors import TABLEAU_COLORS
 from pathlib import Path
 
 # Load JSON from cmake-build-debug
-json_file = Path(__file__).parent / "cmake-build-debug/gantt.json"
+json_file = "gantt.json"
 with open(json_file) as f:
     data = json.load(f)
 
