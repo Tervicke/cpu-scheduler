@@ -13,7 +13,7 @@ public:
     int completionTime{};
     int turnaroundTime{};
     int waitingTime{};
-    int starttime{};
+    int startTime{};
     Process(const int arrivalTime , const int burstTime)
     {
         this->arrivalTime = arrivalTime;
@@ -162,9 +162,10 @@ void run_rr(const ProcessContainer& container , const int timeQuantum) //Round R
         }
     }
 }
-void run_sjf(const ProcessContainer& container)
+void run_sjf(const ProcessContainer& container , nlohmann::json& j)
 {
 
+    j["algorithm"] = "Shortest Job First";
     auto sorted = container.processes;
     //sorted sorts the proccess in the ordero of their arrival time
     std::ranges::sort(sorted, [](const auto& a , const auto& b)
@@ -210,8 +211,25 @@ void run_sjf(const ProcessContainer& container)
         p.completionTime = currentTime + p.burstTime;
         p.turnaroundTime = p.completionTime - p.arrivalTime;
         p.waitingTime = currentTime - p.arrivalTime;
+        p.startTime = currentTime;
         currentTime += p.burstTime;
         p.print();
+
+        j["plot"].push_back({
+            {"id" , p.id},
+            {"start" , p.startTime},
+            {"end" , p.completionTime}
+        });
+        j["processes"].push_back({
+                {"id" , p.id},
+                {"AT" , p.arrivalTime},
+                {"CT" , p.completionTime},
+                {"BT" , p.burstTime},
+                {"TAT",p.turnaroundTime},
+                   {"WT" , p.waitingTime},
+            });
+        std::ofstream out("gantt.json");
+        out << j.dump(4);
     }
 }
 
@@ -238,13 +256,14 @@ void run_fcfs(const ProcessContainer& container , nlohmann::json& j)
 
         //completion time = currentTime + p.burstTime
         p.completionTime = currentTime + p.burstTime;
+        p.startTime = currentTime;
         currentTime += p.burstTime;
         p.turnaroundTime = p.completionTime - p.arrivalTime;
         p.waitingTime = p.turnaroundTime - p.burstTime;
         //update the current time
         j["plot"].push_back({
             {"id" , p.id},
-            {"start" , p.arrivalTime},
+            {"start" , p.startTime},
             {"end" , p.completionTime}
         });
         j["processes"].push_back({
@@ -258,7 +277,6 @@ void run_fcfs(const ProcessContainer& container , nlohmann::json& j)
     }
     std::ofstream out("gantt.json");
     out << j.dump(4);
-    std::cout << "works till here";
     for (auto x : sorted)
     {
         x.print();
@@ -274,6 +292,6 @@ int main()
     c.addProcess(Process(2,5));;
     nlohmann::json j;
     run_fcfs(c , j);
-    system("bash -c 'source ../venv/bin/activate && python3 ../script.py'");
+    system("bash -c 'source ../venv/bin/activate && python3 ../script.py &'");
     return 0;
 }
